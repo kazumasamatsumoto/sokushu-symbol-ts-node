@@ -31,15 +31,25 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-  const tsRepo = repositoryFactory.createTransactionStatusRepository();
-  const transactionStatus = await tsRepo
-    .getTransactionStatus(
-      "E90C84A670F83E19410675BE5CD0FBDB0AB467EADC2ED6910F47A27D1BB96F64"
-    )
-    .toPromise();
-  console.log(transactionStatus);
+  const recipientAddress = Address.createFromRawAddress(bobAddress);
+  const transferTransaction = TransferTransaction.create(
+    Deadline.create(epochAdjustment!),
+    recipientAddress,
+    [],
+    PlainMessage.create("This is a test message"),
+    networkType!,
+    UInt64.fromUint(2000000)
+  );
+
+  const account = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
+  const signedTransaction = account.sign(
+    transferTransaction,
+    networkGenerationHash!
+  );
+  console.log(signedTransaction.hash, "hash")
+  console.log(signedTransaction.payload, "payload")
+  const transactionRepository = repositoryFactory.createTransactionRepository();
+  const response = await transactionRepository.announce(signedTransaction).toPromise();
+  console.log(response);
 };
 example().then();
-
-
-// next 4.5 トランザクション履歴

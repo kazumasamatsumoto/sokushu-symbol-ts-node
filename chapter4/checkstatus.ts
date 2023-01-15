@@ -40,6 +40,3 @@ const example = async (): Promise<void> => {
   console.log(transactionStatus);
 };
 example().then();
-
-
-// next 4.5 トランザクション履歴
