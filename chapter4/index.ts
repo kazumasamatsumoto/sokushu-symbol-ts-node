@@ -1,3 +1,4 @@
+
 import {
   RepositoryFactoryHttp,
   Account,
@@ -33,12 +34,12 @@ const example = async (): Promise<void> => {
     .toPromise();
   const recipientAddress = Address.createFromRawAddress(bobAddress);
   const transferTransaction = TransferTransaction.create(
-    Deadline.create(epochAdjustment!),
-    recipientAddress,
-    [],
-    PlainMessage.create("This is a test message"),
-    networkType!,
-    UInt64.fromUint(2000000)
+    Deadline.create(epochAdjustment!), // 有効期限
+    recipientAddress, // 受取人のアドレス
+    [], // 送信するモザイクとその数量
+    PlainMessage.create("This is a test message"), // メッセージ
+    networkType!, // ネットワークタイプ
+    UInt64.fromUint(2000000) // 手数料
   );
 
   const account = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
