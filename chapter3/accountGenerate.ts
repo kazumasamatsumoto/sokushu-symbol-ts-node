@@ -38,47 +38,12 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-  const alicePublicAccount = PublicAccount.createFromPublicKey(AlicePublicKey, networkType!);
-  const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-  const carol = Account.createFromPrivateKey(carolPrivateKey, networkType!);
-
-  const innerTx1 = TransferTransaction.create(
-    undefined,
-    bob.address,
-    [],
-    PlainMessage.create("tx1"),
-    networkType
-  );
-
-  const innerTx2 = TransferTransaction.create(
-    undefined,
-    carol.address,
-    [],
-    PlainMessage.create("tx2"),
-    networkType
-  );
-
-  const aggregateTx = AggregateTransaction.createComplete(
-    Deadline.create(epochAdjustment!),
-    [
-      innerTx1.toAggregate(alicePublicAccount),
-      innerTx2.toAggregate(alicePublicAccount)
-    ],
-    networkType,
-    [],
-    UInt64.fromUint(1000000)
-  )
-  const txRepo = repositoryFactory.createTransactionRepository();
-
-  const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
-  console.log('Payload:', signedTx.payload);
-  console.log('Transaction Hash:', signedTx.hash);
-  const response = await txRepo
-    .announce(signedTx)
-    .toPromise();
-  console.log(response);
+  const alice = Account.generateNewAccount(networkType!)
+  console.log(alice);
+  console.log(alice.address);
+  console.log(alice.privateKey);
+  console.log(alice.publicKey);
 };
 example().then();
 
-// next 5 モザイク
+// next 4.5 トランザクション履歴

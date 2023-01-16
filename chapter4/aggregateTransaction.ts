@@ -81,4 +81,4 @@ const example = async (): Promise<void> => {
 };
 example().then();
 
-// next 5 モザイク
+// next 4.5 トランザクション履歴
