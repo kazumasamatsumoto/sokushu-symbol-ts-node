@@ -38,8 +38,8 @@ const carolPrivateKey =
   "8909D963511C87FB5FDA6D60067D40CF349155F12048AB2A82E1F42BA99D3B8F";
 const carolPublicKey =
   "40E803B6D873F0CF6B7B1B56B38F51A36E8A7382F9E5D4342A5128613546E9D3";
-const symbolMosaicId = "72C0212E67A08BCE";
-const myMosaicId = "7DF08F144FBC8CC0";
+const symbolMosaicId = "72C0212E67A08BCE"
+const myMosaicId = "7DF08F144FBC8CC0"
 
 const example = async (): Promise<void> => {
   // Network information
@@ -60,11 +60,24 @@ const example = async (): Promise<void> => {
   // トランザクションの作成
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
 
-  const receiptRepo = repositoryFactory.createReceiptRepository();
-  const state = await receiptRepo
-    .searchAddressResolutionStatements({ height: UInt64.fromUint(163351) })
-    .toPromise();
-  console.log(state.data[0].resolutionEntries[0]);
+  const nsRepo = repositoryFactory.createNamespaceRepository();
+  const accountNames = await nsRepo.getAccountsNames(
+    [alice.address]
+  ).toPromise()
+
+  const namespaceIds = accountNames[0].names.map(name => {
+    return name.namespaceId;
+  })
+  console.log(namespaceIds);
+
+  const mosaicNames = await nsRepo.getMosaicsNames(
+    [new MosaicId("7DF08F144FBC8CC0")]
+  ).toPromise()
+
+  const mosaicNamespaceIds = mosaicNames[0].names.map(name => {
+    return name.namespaceId;
+  })
+  console.log(mosaicNamespaceIds);
 
   // 署名
   // const signedTx = alice.sign(tx, networkGenerationHash!);
@@ -72,6 +85,8 @@ const example = async (): Promise<void> => {
   // console.log("Transaction Hash:", signedTx.hash);
   // const response = await txRepo.announce(signedTx).toPromise();
   // console.log(response);
+
+
 };
 example().then();
 

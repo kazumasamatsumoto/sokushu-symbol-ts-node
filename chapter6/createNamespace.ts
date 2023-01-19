@@ -18,9 +18,6 @@ import {
   Mosaic,
   EmptyMessage,
   NamespaceRegistrationTransaction,
-  NamespaceId,
-  AliasTransaction,
-  AliasAction,
 } from "symbol-sdk";
 const AlicePrivateKey =
   "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
@@ -38,8 +35,8 @@ const carolPrivateKey =
   "8909D963511C87FB5FDA6D60067D40CF349155F12048AB2A82E1F42BA99D3B8F";
 const carolPublicKey =
   "40E803B6D873F0CF6B7B1B56B38F51A36E8A7382F9E5D4342A5128613546E9D3";
-const symbolMosaicId = "72C0212E67A08BCE";
-const myMosaicId = "7DF08F144FBC8CC0";
+const symbolMosaicId = "72C0212E67A08BCE"
+const myMosaicId = "7DF08F144FBC8CC0"
 
 const example = async (): Promise<void> => {
   // Network information
@@ -52,26 +49,35 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
+
+  const nwRepo = repositoryFactory.createNetworkRepository();
   const txRepo = repositoryFactory.createTransactionRepository();
+  const rentalFees = await nwRepo.getRentalFees().toPromise();
+  const rootNsperBlock = rentalFees.effectiveRootNamespaceRentalFeePerBlock.compact();
+  const rentalDays = 365;
+  const rentalBlock = rentalDays * 24 * 60 * 60 / 30;
+  const rootNsRentalFeeTotal = rentalBlock * rootNsperBlock;
+  console.log("rentalBlock:" + rentalBlock);
+  console.log("rootNsRentalFeeTotal", rootNsRentalFeeTotal);
 
-  const namespaceId = new NamespaceId("kazumasa");
-  const namespaceIdMosaic = new NamespaceId("kazumasa.tomato");
-  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
+  const childNamespaceRentalFee = rentalFees.effectiveChildNamespaceRentalFee.compact();
+  console.log(childNamespaceRentalFee, "childNamespaceRentalFee")
+
   // トランザクションの作成
+  const tx = NamespaceRegistrationTransaction.createSubNamespace(
+    Deadline.create(epochAdjustment!),
+    "tomato",
+    "kazumasa",
+    networkType!,
+  ).setMaxFee(100)
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
+  const signedTx = alice.sign(tx, networkGenerationHash!);
+  console.log("Payload:", signedTx.payload);
+  console.log("Transaction Hash:", signedTx.hash);
+  const response = await txRepo.announce(signedTx).toPromise();
+  console.log(response);
+  // const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
 
-  const receiptRepo = repositoryFactory.createReceiptRepository();
-  const state = await receiptRepo
-    .searchAddressResolutionStatements({ height: UInt64.fromUint(163351) })
-    .toPromise();
-  console.log(state.data[0].resolutionEntries[0]);
-
-  // 署名
-  // const signedTx = alice.sign(tx, networkGenerationHash!);
-  // console.log("Payload:", signedTx.payload);
-  // console.log("Transaction Hash:", signedTx.hash);
-  // const response = await txRepo.announce(signedTx).toPromise();
-  // console.log(response);
 };
 example().then();
 
