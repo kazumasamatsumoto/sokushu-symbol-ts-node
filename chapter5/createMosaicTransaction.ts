@@ -15,8 +15,6 @@ import {
   MosaicFlags,
   MosaicSupplyChangeTransaction,
   MosaicSupplyChangeAction,
-  Mosaic,
-  EmptyMessage,
 } from "symbol-sdk";
 const AlicePrivateKey =
   "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
@@ -34,8 +32,6 @@ const carolPrivateKey =
   "8909D963511C87FB5FDA6D60067D40CF349155F12048AB2A82E1F42BA99D3B8F";
 const carolPublicKey =
   "40E803B6D873F0CF6B7B1B56B38F51A36E8A7382F9E5D4342A5128613546E9D3";
-const symbolMosaicId = "72C0212E67A08BCE"
-const myMosaicId = "7DF08F144FBC8CC0"
 
 const example = async (): Promise<void> => {
   // Network information
@@ -49,25 +45,52 @@ const example = async (): Promise<void> => {
     .getGenerationHash()
     .toPromise();
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
 
-  const tx = TransferTransaction.create(
-    Deadline.create(epochAdjustment!),
-    bob.address,
-    [
-      new Mosaic(new MosaicId("72C0212E67A08BCE"), UInt64.fromUint(10000000)),
-      new Mosaic(new MosaicId("7DF08F144FBC8CC0"), UInt64.fromUint(1000)),
-    ],
-    EmptyMessage,
+  const supplyMutable = true;
+  const transferable = false;
+  const restrictable = true;
+  const revokable = true;
+
+  const nonce = MosaicNonce.createRandom();
+  const mosaicDefTx = MosaicDefinitionTransaction.create(
+    undefined,
+    nonce,
+    MosaicId.createFromNonce(nonce, alice.address),
+    MosaicFlags.create(supplyMutable, transferable, restrictable, revokable),
+    2,
+    UInt64.fromUint(0),
+    networkType!
+  );
+
+  const mosaicChangeTx = MosaicSupplyChangeTransaction.create(
+    undefined,
+    mosaicDefTx.mosaicId,
+    MosaicSupplyChangeAction.Increase,
+    UInt64.fromUint(1000000),
     networkType
-  ).setMaxFee(100);
+  );
+
+  const aggregateTx = AggregateTransaction.createComplete(
+    Deadline.create(epochAdjustment!),
+    [
+      mosaicDefTx.toAggregate(alice.publicAccount),
+      mosaicChangeTx.toAggregate(alice.publicAccount),
+    ],
+    networkType,
+    []
+  ).setMaxFeeForAggregate(100, 0);
+
+
 
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const signedTx = alice.sign(tx, networkGenerationHash!);
-  console.log("Payload:", signedTx.payload);
-  console.log("Transaction Hash:", signedTx.hash);
-  const response = await txRepo.announce(signedTx).toPromise();
+  const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
+  console.log('Payload:', signedTx.payload);
+  console.log('Transaction Hash:', signedTx.hash);
+
+  const response = await txRepo
+    .announce(signedTx)
+    .toPromise();
   console.log(response);
 };
 example().then();
