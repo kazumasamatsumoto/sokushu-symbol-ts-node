@@ -65,11 +65,6 @@ const example = async (): Promise<void> => {
   // メタデータサービス
   const metaService = new MetadataTransactionService(metaRepo);
 
-  const res = await metaRepo.search({
-    targetAddress: alice.address,
-    sourceAddress: alice.address,
-  }).toPromise();
-  console.log(JSON.stringify(res,null,'\t'));
 
 
   // 署名
