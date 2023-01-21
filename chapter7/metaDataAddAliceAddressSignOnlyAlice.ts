@@ -54,29 +54,39 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-    const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-    const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-
-  // 各種リポジトリ
-  const txRepo = repositoryFactory.createTransactionRepository();
+  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
+  // トランザクションの作成
+  const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
   const metaRepo = repositoryFactory.createMetadataRepository();
   const mosaicRepo = repositoryFactory.createMosaicRepository();
-  const nsRepo = repositoryFactory.createNamespaceRepository();
-  // メタデータサービス
   const metaService = new MetadataTransactionService(metaRepo);
 
-  const res = await metaRepo.search({
-    targetAddress: alice.address,
-    sourceAddress: alice.address,
-  }).toPromise();
-  console.log(JSON.stringify(res,null,'\t'));
+  const key = KeyGenerator.generateUInt64Key("key_account");
+  const value = "test-alice";
 
+  const tx = await metaService.createAccountMetadataTransaction(
+    undefined,
+    networkType!,
+    alice.address,
+    key,value,
+    alice.address,
+    UInt64.fromUint(0)
+  ).toPromise();
+
+  const aggregateTx = AggregateTransaction.createComplete(
+    Deadline.create(epochAdjustment!),
+    [tx.toAggregate(alice.publicAccount)],
+    networkType,[]
+  ).setMaxFeeForAggregate(100, 0)
+  const txRepo = repositoryFactory.createTransactionRepository();
 
   // 署名
-  // const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
-  // console.log("Payload:", signedTx.payload);
-  // console.log("Transaction Hash:", signedTx.hash);
-  // const response = await txRepo.announce(signedTx).toPromise();
-  // console.log(response);
+  const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
+  console.log("Payload:", signedTx.payload);
+  console.log("Transaction Hash:", signedTx.hash);
+  const response = await txRepo.announce(signedTx).toPromise();
+  console.log(response);
 };
 example().then();
+
+// next 5 モザイク

@@ -62,21 +62,40 @@ const example = async (): Promise<void> => {
   const metaRepo = repositoryFactory.createMetadataRepository();
   const mosaicRepo = repositoryFactory.createMosaicRepository();
   const nsRepo = repositoryFactory.createNamespaceRepository();
+
   // メタデータサービス
   const metaService = new MetadataTransactionService(metaRepo);
 
-  const res = await metaRepo.search({
-    targetAddress: alice.address,
-    sourceAddress: alice.address,
-  }).toPromise();
-  console.log(JSON.stringify(res,null,'\t'));
+  // mosaicId
+  const mosaicId = new MosaicId("7DF08F144FBC8CC0")
+  const mosaicInfo = await mosaicRepo.getMosaic(mosaicId).toPromise();
 
+  const key = KeyGenerator.generateUInt64Key("key_mosaic");
+  const value = "test-mosaic";
+
+  const tx = await metaService.createMosaicMetadataTransaction(
+    undefined,
+    networkType,
+    mosaicInfo.ownerAddress,
+    mosaicId,
+    key,value,
+    alice.address,
+    UInt64.fromUint(0)
+  ).toPromise();
+
+  const aggregateTx = AggregateTransaction.createComplete(
+    Deadline.create(epochAdjustment!),
+    [tx.toAggregate(alice.publicAccount)],
+    networkType,[]
+  ).setMaxFeeForAggregate(100, 0);
 
   // 署名
-  // const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
-  // console.log("Payload:", signedTx.payload);
-  // console.log("Transaction Hash:", signedTx.hash);
-  // const response = await txRepo.announce(signedTx).toPromise();
-  // console.log(response);
+  const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
+  console.log("Payload:", signedTx.payload);
+  console.log("Transaction Hash:", signedTx.hash);
+  const response = await txRepo.announce(signedTx).toPromise();
+  console.log(response);
 };
 example().then();
+
+// next 5 モザイク

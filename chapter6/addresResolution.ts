@@ -21,8 +21,6 @@ import {
   NamespaceId,
   AliasTransaction,
   AliasAction,
-  MetadataTransactionService,
-  KeyGenerator,
 } from "symbol-sdk";
 const AlicePrivateKey =
   "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
@@ -54,29 +52,27 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-    const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-    const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-
-  // 各種リポジトリ
   const txRepo = repositoryFactory.createTransactionRepository();
-  const metaRepo = repositoryFactory.createMetadataRepository();
-  const mosaicRepo = repositoryFactory.createMosaicRepository();
-  const nsRepo = repositoryFactory.createNamespaceRepository();
-  // メタデータサービス
-  const metaService = new MetadataTransactionService(metaRepo);
 
-  const res = await metaRepo.search({
-    targetAddress: alice.address,
-    sourceAddress: alice.address,
-  }).toPromise();
-  console.log(JSON.stringify(res,null,'\t'));
+  const namespaceId = new NamespaceId("kazumasa");
+  const namespaceIdMosaic = new NamespaceId("kazumasa.tomato");
+  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
+  // トランザクションの作成
+  const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
 
+  const receiptRepo = repositoryFactory.createReceiptRepository();
+  const state = await receiptRepo
+    .searchAddressResolutionStatements({ height: UInt64.fromUint(163351) })
+    .toPromise();
+  console.log(state.data[0].resolutionEntries[0]);
 
   // 署名
-  // const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
+  // const signedTx = alice.sign(tx, networkGenerationHash!);
   // console.log("Payload:", signedTx.payload);
   // console.log("Transaction Hash:", signedTx.hash);
   // const response = await txRepo.announce(signedTx).toPromise();
   // console.log(response);
 };
 example().then();
+
+// next 5 モザイク
