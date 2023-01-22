@@ -23,6 +23,8 @@ import {
   AliasAction,
   MetadataTransactionService,
   KeyGenerator,
+  HashLockTransaction,
+  CosignatureTransaction,
 } from "symbol-sdk";
 const AlicePrivateKey =
   "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
@@ -45,27 +47,47 @@ const myMosaicId = "7DF08F144FBC8CC0";
 
 const example = async (): Promise<void> => {
   // Network information
-  const nodeUrl = "http://sym-test-04.opening-line.jp:3000";
-  const repositoryFactory = new RepositoryFactoryHttp(nodeUrl);
-  const epochAdjustment = await repositoryFactory
-    .getEpochAdjustment()
-    .toPromise();
-  const networkType = await repositoryFactory.getNetworkType().toPromise();
-  const networkGenerationHash = await repositoryFactory
-    .getGenerationHash()
-    .toPromise();
-    const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-    const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
+  const nodeUrl = "https://sym-test-01.opening-line.jp:3001";
+  const repositoryFactory = new RepositoryFactoryHttp(nodeUrl, {
+    websocketUrl: "ws://sym-test-01.opening-line.jp:3001/ws",
+    websocketInjected: WebSocket,
+  });
+  // const epochAdjustment = await repositoryFactory
+  //   .getEpochAdjustment()
+  //   .toPromise();
+  // const networkType = await repositoryFactory.getNetworkType().toPromise();
+  // const networkGenerationHash = await repositoryFactory
+  //   .getGenerationHash()
+  //   .toPromise();
+  // const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
+  // const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
+
+  // アグリゲートボンデットトランザクションの作成
+  // ２つのトランザクション
+
+  const txRepo = repositoryFactory.createTransactionRepository();
+  // txRepo
+  //   .getTransaction(
+  //     "73B1A4AFA1033DFCE2D44C44031605D3ACD37961283E4BC519FC93B8685394E5",
+  //     TransactionGroup.Partial
+  //   )
+  //   .subscribe((x) => {
+  //     console.log(x);
+  //   });
+
+  // const txInfo = await txRepo.getTransaction(signedAggregateTx.hash, TransactionGroup.Partial).toPromise()
+  // const cosignatureTx = CosignatureTransaction.create(txInfo as AggregateTransaction);
+  // const signedCosTx = bob.signCosignatureTransaction(cosignatureTx)
+  // const finishResponse = await txRepo.announceAggregateBondedCosignature(signedCosTx).toPromise();
+  // console.log(finishResponse);
 
   // 各種リポジトリ
-  const txRepo = repositoryFactory.createTransactionRepository();
-  const metaRepo = repositoryFactory.createMetadataRepository();
-  const mosaicRepo = repositoryFactory.createMosaicRepository();
-  const nsRepo = repositoryFactory.createNamespaceRepository();
-  // メタデータサービス
-  const metaService = new MetadataTransactionService(metaRepo);
-
-
+  // const txRepo = repositoryFactory.createTransactionRepository();
+  // const metaRepo = repositoryFactory.createMetadataRepository();
+  // const mosaicRepo = repositoryFactory.createMosaicRepository();
+  // const nsRepo = repositoryFactory.createNamespaceRepository();
+  // // メタデータサービス
+  // const metaService = new MetadataTransactionService(metaRepo);
 
   // 署名
   // const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
