@@ -1,3 +1,14 @@
+// 仕様
+/**
+ * HashLockTransactionをネットワークにアナウンス（これが取り込まれないとアグリゲートボンデットトランザクションは
+ * 一生取り込まれない
+ * 取り込まれたのちにアグリゲートボンデットトランザクションをアナウンス
+ * 今回はsetTimeoutで対応
+ * ボンデットトランザクションがネットワークに到着したらトランザクションを取得
+ * bobの秘密鍵で署名してアナウンス（セットタイムアウトで30秒ほどまつ（ブロック生成期間として）
+ * すると自動的にアグリゲートトランザクションが承認される
+ */
+
 import {
   RepositoryFactoryHttp,
   Account,
@@ -116,19 +127,28 @@ const example = async (): Promise<void> => {
   console.log(signedLockTx.hash, "ロックトランザクションのハッシュ値");
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const txResponse = await txRepo
-    .announceAggregateBonded(signedAggregateTx)
-    .toPromise();
-  console.log(txResponse);
   const lockResponse = await txRepo.announce(signedLockTx).toPromise();
   console.log(lockResponse);
 
+  // １ブロック分settimeoutするよ
   setTimeout(async () => {
-    const txInfo = await txRepo
-      .getTransaction(signedAggregateTx.hash, TransactionGroup.Partial)
-      .toPromise();
-    console.log(txInfo);
-  }, 3000);
+    const txResponse = await txRepo
+    .announceAggregateBonded(signedAggregateTx)
+    .toPromise();
+    console.log(txResponse);
+    // １ブロック分settimeoutするよ
+    setTimeout(async () => {
+      const txInfo = await txRepo
+        .getTransaction(signedAggregateTx.hash, TransactionGroup.Partial)
+        .toPromise();
+      const cosignatureTx = CosignatureTransaction.create(txInfo as AggregateTransaction);
+      const singedCosTx = bob.signCosignatureTransaction(cosignatureTx);
+      await txRepo.announceAggregateBondedCosignature(singedCosTx).toPromise();
+      console.log("finish")
+    }, 30000);
+  }, 30000);
+
+
 
   // const txInfo = await txRepo.getTransaction(signedAggregateTx.hash, TransactionGroup.Partial).toPromise()
   // const cosignatureTx = CosignatureTransaction.create(txInfo as AggregateTransaction);
