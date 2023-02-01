@@ -1,18 +1,37 @@
+// 注意、これは一度してしまうと使えなくなるので、各自アカウントを用意すること
 import {
-  Account,
-  Address,
-  AggregateTransaction,
-  Deadline,
-  HashLockTransaction,
-  Mosaic,
-  MosaicId,
-  NetworkType,
-  PlainMessage,
-  PublicAccount,
   RepositoryFactoryHttp,
-  TransactionService,
+  Account,
+  PublicAccount,
+  Address,
   TransferTransaction,
+  Deadline,
+  PlainMessage,
   UInt64,
+  TransactionGroup,
+  AggregateTransaction,
+  MosaicNonce,
+  MosaicDefinitionTransaction,
+  MosaicId,
+  MosaicFlags,
+  MosaicSupplyChangeTransaction,
+  MosaicSupplyChangeAction,
+  Mosaic,
+  EmptyMessage,
+  NamespaceRegistrationTransaction,
+  NamespaceId,
+  AliasTransaction,
+  AliasAction,
+  MetadataTransactionService,
+  KeyGenerator,
+  HashLockTransaction,
+  CosignatureTransaction,
+  Crypto,
+  SecretLockTransaction,
+  LockHashAlgorithm,
+  SecretProofTransaction,
+  MultisigAccountModificationTransaction,
+  TransactionService,
 } from "symbol-sdk";
 import { sha3_256 } from "js-sha3";
 
@@ -51,50 +70,33 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-
-  const networkCurrencyMosaicId = new MosaicId(symbolMosaicId);
-  const networkCurrencyDivisibility = 6;
-
-  const listener = repositoryFactory.createListener();
-  const receiptHttp = repositoryFactory.createReceiptRepository();
-  const transactionHttp = repositoryFactory.createTransactionRepository();
-  const transactionService = new TransactionService(
-    transactionHttp,
-    receiptHttp
-  );
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   const carol = Account.createFromPrivateKey(carolPrivateKey, networkType!);
   const davit = Account.createFromPrivateKey(davitPrivateKey, networkType!);
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const transferTransaction = TransferTransaction.create(
-    Deadline.create(epochAdjustment!),
-    alice.address,
-    [
-      new Mosaic(
-        networkCurrencyMosaicId,
-        UInt64.fromUint(10 * Math.pow(10, networkCurrencyDivisibility))
-      ),
-    ],
-    PlainMessage.create("sending 10 symbol.xym multisig"),
+  const multisigTx = MultisigAccountModificationTransaction.create(
+    undefined,
+    2,
+    2,
+    [bob.address, carol.address],
+    [],
     networkType!
   );
 
-  const aggregateTransaction = AggregateTransaction.createBonded(
-    Deadline.create(epochAdjustment!),
-    [transferTransaction.toAggregate(davit.publicAccount)],
+  const aggregateTx = AggregateTransaction.createBonded(
+    Deadline.create(epochAdjustment),
+    [multisigTx.toAggregate(davit.publicAccount)],
     networkType!,
-    [],
-    UInt64.fromUint(2000000)
-  );
+    []
+  ).setMaxFeeForAggregate(100, 3);
 
-  const signedTransaction = bob.sign(
-    aggregateTransaction,
-    networkGenerationHash!
-  );
-
+  const signedTransaction = davit.sign(aggregateTx, networkGenerationHash!);
   console.log(signedTransaction.hash);
+
+  const networkCurrencyMosaicId = new MosaicId(symbolMosaicId);
+  const networkCurrencyDivisibility = 6;
 
   const hashLockTransaction = HashLockTransaction.create(
     Deadline.create(epochAdjustment!),
@@ -104,19 +106,27 @@ const example = async (): Promise<void> => {
     ),
     UInt64.fromUint(480),
     signedTransaction,
-    networkType!,
+    networkType,
     UInt64.fromUint(2000000)
   );
 
-  const singedHashLockTransaction = bob.sign(
+  const signedHashLockTransaction = davit.sign(
     hashLockTransaction,
     networkGenerationHash!
+  );
+
+  const listener = repositoryFactory.createListener();
+  const receiptHttp = repositoryFactory.createReceiptRepository();
+  const transactionHttp = repositoryFactory.createTransactionRepository();
+  const transactionService = new TransactionService(
+    transactionHttp,
+    receiptHttp
   );
 
   listener.open().then(() => {
     transactionService
       .announceHashLockAggregateBonded(
-        singedHashLockTransaction,
+        signedHashLockTransaction,
         signedTransaction,
         listener
       )
