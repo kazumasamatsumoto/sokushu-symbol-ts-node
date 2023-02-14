@@ -57,20 +57,15 @@ const example = async (): Promise<void> => {
   const networkCurrencyMosaicId = new MosaicId(symbolMosaicId);
   const networkCurrencyDivisibility = 6;
 
-  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-  const carol = Account.createFromPrivateKey(carolPrivateKey, networkType!);
+  const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
 
   const nsRepo = repositoryFactory.createNamespaceRepository();
   const wsEndpoint = nodeUrl.replace("http", "ws") + "/ws";
   const listener = new Listener(wsEndpoint, nsRepo, WebSocket);
   listener.open().then(() => {
     listener
-      .aggregateBondedAdded(bob.address)
-      .subscribe(async (tx) => console.log("こいつ動くぞ", tx));
-
-    listener
-      .aggregateBondedAdded(carol.address)
-      .subscribe(async (tx) => console.log("こいつも動くんかな？", tx));
+      .newBlock()
+      .subscribe((block) => console.log("新しく生成されたブロック", block));
   });
 
   // const txInfo = await txRepo.getTransaction(signedAggregateTx.hash, TransactionGroup.Partial).toPromise()
