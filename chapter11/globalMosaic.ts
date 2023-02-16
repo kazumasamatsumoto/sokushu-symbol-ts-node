@@ -9,7 +9,6 @@ import {
   KeyGenerator,
   Listener,
   Mosaic,
-  MosaicAddressRestrictionTransaction,
   MosaicDefinitionTransaction,
   MosaicFlags,
   MosaicId,
@@ -56,11 +55,9 @@ const davitAddress = "TCZYLNV7CRTI2AAWUENQ6UHCFWSBIGRVTANIU4A";
 const symbolMosaicId = "72C0212E67A08BCE";
 const myMosaicId = "7DF08F144FBC8CC0";
 
-const restrictedAccountsPrivateKey =
-  "24A345C541C38289171225EE060A7FAC7E9DF2479DA5FE0BC7C472D0352EB287";
-const restrictedAccountsPublicKey =
-  "58CEA0752DEE9834F9C9390B3A73FF45F89771BED467DE044B0BC289D7FBEAFC";
-const restrictedAccountsAddress = "TCQLB7GNIUKALSSVPJT46VKHPVE2TCP5RXFBOVQ";
+const restrictedAccountsPrivateKey = "24A345C541C38289171225EE060A7FAC7E9DF2479DA5FE0BC7C472D0352EB287"
+const restrictedAccountsPublicKey = "58CEA0752DEE9834F9C9390B3A73FF45F89771BED467DE044B0BC289D7FBEAFC"
+const restrictedAccountsAddress = "TCQLB7GNIUKALSSVPJT46VKHPVE2TCP5RXFBOVQ"
 
 const example = async (): Promise<void> => {
   // Network information
@@ -79,36 +76,59 @@ const example = async (): Promise<void> => {
 
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-  const restrict = Account.createFromPrivateKey(
-    restrictedAccountsPrivateKey,
+  const restrict = Account.createFromPrivateKey(restrictedAccountsPrivateKey, networkType!);
+
+  const nsRepo = repositoryFactory.createNamespaceRepository();
+  const resMosaicRepo = repositoryFactory.createRestrictionMosaicRepository();
+  const mosaicResService = new MosaicRestrictionTransactionService(resMosaicRepo, nsRepo);
+
+  const supplyMutable = true;
+  const transferable = true;
+  const restrictable = true;
+  const revokable = true;
+
+  const nonce = MosaicNonce.createRandom()
+  const mosaicDefTx = MosaicDefinitionTransaction.create(
+    undefined,
+    nonce,
+    MosaicId.createFromNonce(nonce, alice.address),
+    MosaicFlags.create(supplyMutable, transferable, restrictable, revokable),
+    0,
+    UInt64.fromUint(0),
     networkType!
   );
 
-  const mosaicId = new MosaicId("36690409EC152439");
-  const aliceMosaicAddressResTx = MosaicAddressRestrictionTransaction.create(
-    Deadline.create(epochAdjustment!),
-    mosaicId,
-    KeyGenerator.generateUInt64Key("KYC"),
-    alice.address,
-    UInt64.fromUint(1),
-    networkType!,
-    UInt64.fromHex("FFFFFFFFFFFFFFFF")
-  ).setMaxFee(100);
+  const mosaicChangeTx = MosaicSupplyChangeTransaction.create(
+    undefined,
+    mosaicDefTx.mosaicId,
+    MosaicSupplyChangeAction.Increase,
+    UInt64.fromUint(1000000),
+    networkType!
+  );
 
-  const signedTx = alice.sign(aliceMosaicAddressResTx, networkGenerationHash!);
-  const txRepo = repositoryFactory.createTransactionRepository();
+  const key = KeyGenerator.generateUInt64Key("KYC");
+  const mosaicGlobalResTx = await mosaicResService.createMosaicGlobalRestrictionTransaction(
+    undefined,
+    networkType!,
+    mosaicDefTx.mosaicId,
+    key,
+    "1",
+    MosaicRestrictionType.EQ,
+  ).toPromise();
+
+
+  const aggregateTx = AggregateTransaction.createComplete(
+    Deadline.create(epochAdjustment!),
+    [
+      mosaicDefTx.toAggregate(alice.publicAccount),
+      mosaicChangeTx.toAggregate(alice.publicAccount),
+      mosaicGlobalResTx.toAggregate(alice.publicAccount)
+    ],
+    networkType!,[],
+  ).setMaxFeeForAggregate(100, 0);
+
+  const signedTx = alice.sign(aggregateTx, networkGenerationHash!);
+  const txRepo = repositoryFactory.createTransactionRepository()
   await txRepo.announce(signedTx).toPromise();
-
-  const bobMosaicAddressResTx = MosaicAddressRestrictionTransaction.create(
-    Deadline.create(epochAdjustment!),
-    mosaicId,
-    KeyGenerator.generateUInt64Key("KYC"),
-    bob.address,
-    UInt64.fromUint(1),
-    networkType!,
-    UInt64.fromHex("FFFFFFFFFFFFFFFF")
-  ).setMaxFee(100);
-  const bobSignedTx = alice.sign(bobMosaicAddressResTx, networkGenerationHash!);
-  await txRepo.announce(bobSignedTx).toPromise()
 };
 example().then();
