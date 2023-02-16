@@ -9,14 +9,11 @@ import {
   Listener,
   Mosaic,
   MosaicId,
-  MosaicRestrictionFlag,
   NetworkType,
-  OperationRestrictionFlag,
   PlainMessage,
   PublicAccount,
   RepositoryFactoryHttp,
   TransactionService,
-  TransactionType,
   TransferTransaction,
   UInt64,
 } from "symbol-sdk";
@@ -68,6 +65,18 @@ const example = async (): Promise<void> => {
 
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   const restrict = Account.createFromPrivateKey(restrictedAccountsPrivateKey, networkType!);
+
+  const tx = AccountRestrictionTransaction.createAddressRestrictionModificationTransaction(
+    Deadline.create(epochAdjustment!),
+    AddressRestrictionFlag.BlockIncomingAddress,
+    [bob.address],
+    [],
+    networkType!,
+  ).setMaxFee(100);
+  const signedTx = restrict.sign(tx, networkGenerationHash!);
+  const txRepo = repositoryFactory.createTransactionRepository();
+
+  await txRepo.announce(signedTx).toPromise();
 
 
 };

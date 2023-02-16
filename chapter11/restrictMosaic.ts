@@ -11,12 +11,10 @@ import {
   MosaicId,
   MosaicRestrictionFlag,
   NetworkType,
-  OperationRestrictionFlag,
   PlainMessage,
   PublicAccount,
   RepositoryFactoryHttp,
   TransactionService,
-  TransactionType,
   TransferTransaction,
   UInt64,
 } from "symbol-sdk";
@@ -68,6 +66,19 @@ const example = async (): Promise<void> => {
 
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   const restrict = Account.createFromPrivateKey(restrictedAccountsPrivateKey, networkType!);
+
+  const mosaicId = new MosaicId("72C0212E67A08BCE");
+  const tx = AccountRestrictionTransaction.createMosaicRestrictionModificationTransaction(
+    Deadline.create(epochAdjustment!),
+    MosaicRestrictionFlag.BlockMosaic,
+    [mosaicId],
+    [],
+    networkType!,
+  ).setMaxFee(100);
+  const signedTx = restrict.sign(tx, networkGenerationHash!);
+  const txRepo = repositoryFactory.createTransactionRepository();
+
+  await txRepo.announce(signedTx).toPromise();
 
 
 };

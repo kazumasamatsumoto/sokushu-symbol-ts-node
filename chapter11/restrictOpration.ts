@@ -69,6 +69,18 @@ const example = async (): Promise<void> => {
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   const restrict = Account.createFromPrivateKey(restrictedAccountsPrivateKey, networkType!);
 
+  const tx = AccountRestrictionTransaction.createOperationRestrictionModificationTransaction(
+    Deadline.create(epochAdjustment!),
+    OperationRestrictionFlag.AllowOutgoingTransactionType,
+    [TransactionType.ACCOUNT_OPERATION_RESTRICTION],
+    [],
+    networkType!,
+  ).setMaxFee(100);
+  const signedTx = restrict.sign(tx, networkGenerationHash!);
+  const txRepo = repositoryFactory.createTransactionRepository();
+
+  await txRepo.announce(signedTx).toPromise();
+
 
 };
 example().then();
