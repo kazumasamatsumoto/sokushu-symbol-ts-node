@@ -1,13 +1,7 @@
 import {
   RepositoryFactoryHttp,
-  Account,
-  PublicAccount,
   Address,
 } from "symbol-sdk";
-const AlicePrivateKey =
-  "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
-const AlicePublicKey =
-  "C57096FF4507B39B79F49EB486EBD5E1673B2448974C64231A23CB5BB6E78540";
 const AliceAddress = "TABJ6AP5WNPZF2BEEN2WA6RFK7HR2VCQWXUU6UI";
 
 const example = async (): Promise<void> => {

@@ -1,10 +1,7 @@
 import { RepositoryFactoryHttp, Account, ReceiptType } from "symbol-sdk";
 
-const bobAddress = "TBH3OVV3AFONJZSYOMUILGERPNYY77AISF54C4Q";
 const bobPrivateKey =
   "EC8E918A532CB53E62C52B06F9B792CE5B073B90066FBB3A210B14B4DD568DCD";
-const bobPublicKey =
-  "8FCE44AB3C4A1A9C37EE0C92116BE1A0D4369EF8BC62799335B722D7FA936618";
 
 const example = async (): Promise<void> => {
   // Network information
