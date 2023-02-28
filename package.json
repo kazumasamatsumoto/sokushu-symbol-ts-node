@@ -7,6 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
+    "catbuffer-typescript": "^1.0.2",
     "rxjs": "^7.8.0",
     "symbol-sdk": "^2.0.3",
     "ts-node": "^10.9.1",

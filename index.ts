@@ -10,6 +10,7 @@ import {
   HashLockTransaction,
   KeyGenerator,
   Listener,
+  MerklePosition,
   Mosaic,
   MosaicAddressRestrictionTransaction,
   MosaicDefinitionTransaction,
@@ -27,6 +28,7 @@ import {
   PublicAccount,
   RepositoryFactoryHttp,
   SignedTransaction,
+  StateProofService,
   Transaction,
   TransactionMapping,
   TransactionService,
@@ -34,38 +36,27 @@ import {
   TransferTransaction,
   UInt64,
 } from "symbol-sdk";
+
+import cat from "catbuffer-typescript";
 import { sha3_256 } from "js-sha3";
 import WebSocket from "ws";
 
-const AlicePrivateKey =
-  "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
-const AlicePublicKey =
-  "C57096FF4507B39B79F49EB486EBD5E1673B2448974C64231A23CB5BB6E78540";
-const AliceAddress = "TABJ6AP5WNPZF2BEEN2WA6RFK7HR2VCQWXUU6UI";
+// InBlockの検証
+function validateTransactionInBlock(leaf, HRoot, merkleProof) {
+  if (merkleProof.length === 0) {
+    return leaf.toUpperCase() === HRoot.toUpperCase();
+  }
 
-const bobAddress = "TBH3OVV3AFONJZSYOMUILGERPNYY77AISF54C4Q";
-const bobPrivateKey =
-  "EC8E918A532CB53E62C52B06F9B792CE5B073B90066FBB3A210B14B4DD568DCD";
-const bobPublicKey =
-  "8FCE44AB3C4A1A9C37EE0C92116BE1A0D4369EF8BC62799335B722D7FA936618";
-const carolAddress = "TA6LZRBVFW2NDWJSMSEXBWOWSGFNFOV6KNBNZ4I";
-const carolPrivateKey =
-  "8909D963511C87FB5FDA6D60067D40CF349155F12048AB2A82E1F42BA99D3B8F";
-const carolPublicKey =
-  "40E803B6D873F0CF6B7B1B56B38F51A36E8A7382F9E5D4342A5128613546E9D3";
-const davitPrivateKey =
-  "CE13ADB8CCB0E5A9567525EA1EC86B40E24FB0B273FF924852C1124C308263E8";
-const davitPublicKey =
-  "9DCA6B5162A2466CFFA01D31FACC31CABF065568A78680E47CB1C879B4202BAD";
-const davitAddress = "TCZYLNV7CRTI2AAWUENQ6UHCFWSBIGRVTANIU4A";
-const symbolMosaicId = "72C0212E67A08BCE";
-const myMosaicId = "7DF08F144FBC8CC0";
-
-const restrictedAccountsPrivateKey =
-  "24A345C541C38289171225EE060A7FAC7E9DF2479DA5FE0BC7C472D0352EB287";
-const restrictedAccountsPublicKey =
-  "58CEA0752DEE9834F9C9390B3A73FF45F89771BED467DE044B0BC289D7FBEAFC";
-const restrictedAccountsAddress = "TCQLB7GNIUKALSSVPJT46VKHPVE2TCP5RXFBOVQ";
+  const HRoot0 = merkleProof.reduce((proofHash, pathItem) => {
+    const hasher = sha3_256.create();
+    if (pathItem.position === MerklePosition.Left) {
+      return hasher.update(Buffer.from(pathItem.hash + proofHash, "hex")).hex();
+    } else {
+      return hasher.update(Buffer.from(proofHash + pathItem.hash, "hex")).hex();
+    }
+  }, leaf);
+  return HRoot.toUpperCase() === HRoot0.toUpperCase();
+}
 
 const example = async (): Promise<void> => {
   // Network information
@@ -78,120 +69,63 @@ const example = async (): Promise<void> => {
   const networkGenerationHash = await repositoryFactory
     .getGenerationHash()
     .toPromise();
-
-  const networkCurrencyMosaicId = new MosaicId(symbolMosaicId);
-  const networkCurrencyDivisibility = 6;
-
+  const accountRepo = repositoryFactory.createAccountRepository();
+  const blockRepo = repositoryFactory.createBlockRepository();
+  const stateProofService = new StateProofService(repositoryFactory);
+  const AlicePrivateKey =
+    "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
-  const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
 
-  const innerTx1 = TransferTransaction.create(
-    undefined,
-    bob.address,
-    [],
-    PlainMessage.create("tx1"),
-    networkType!
-  );
+  // ペイロード確認
+  const payload =
+    "6801000000000000E2666BDFB86429907BA105ADAF1D3C3BD65AF5057332775A1AF89B0FB5A0DD8EB146A59515186A6B067B21396C9FCDAB8F70D697549C346A8C6011A5E812C60BC57096FF4507B39B79F49EB486EBD5E1673B2448974C64231A23CB5BB6E78540000000000298414240B50000000000005B598568020000005FB59DE118CD751FCD9F1CE895537A15E1F53C90EE0C1AFD400EE76827F1EDB0C0000000000000006000000000000000C57096FF4507B39B79F49EB486EBD5E1673B2448974C64231A23CB5BB6E785400000000001985441984FB756BB015CD4E65873288598917B718FFC08917BC1720000010000000000EEAFF441BA994BE740420F00000000005B000000000000008FCE44AB3C4A1A9C37EE0C92116BE1A0D4369EF8BC62799335B722D7FA936618000000000198544198029F01FDB35F92E8242375607A2557CF1D5450B5E94F510B00000000000000007468616E6B20796F75210000000000";
+  const height = 258465;
+  const tx = TransactionMapping.createFromPayload(
+    payload
+  ) as AggregateTransaction;
+  console.log(tx)
 
-  const innerTx2 = TransferTransaction.create(
-    undefined,
-    alice.address,
-    [],
-    PlainMessage.create("tx2"),
-    networkType!
-  );
-
-  const aggregateTx = AggregateTransaction.createComplete(
-    Deadline.create(epochAdjustment!),
-    [
-      innerTx1.toAggregate(alice.publicAccount),
-      innerTx2.toAggregate(bob.publicAccount),
-    ],
-    networkType!,
-    []
-  ).setMaxFeeForAggregate(100, 1);
-
-  let signedTx = alice.sign(aggregateTx, networkGenerationHash!);
-  let signedHash = signedTx.hash;
-  let signedPayload = signedTx.payload;
-
-  console.log(signedPayload);
-
-  const tx = TransactionMapping.createFromPayload(signedPayload);
-  console.log(tx);
-
-  const bobSignedTx = CosignatureTransaction.signTransactionPayload(
-    bob,
-    signedPayload,
-    networkGenerationHash!
-  );
-  const bobSignedTxSignature = bobSignedTx.signature;
-  const bobSignedTxSignerPublicKey = bobSignedTx.signerPublicKey;
-
-  const signedHashAfterBob = Transaction.createTransactionHash(
-    signedPayload,
+  const hash = Transaction.createTransactionHash(
+    payload,
     // @ts-ignore
     Buffer.from(networkGenerationHash!, "hex")
   );
-  const cosignSignedTxs = [
-    new CosignatureSignedTransaction(
-      signedHash,
-      bobSignedTxSignature,
-      bobSignedTxSignerPublicKey
+
+  // 署名者の検証
+  const res = alice.publicAccount.verifySignature(
+    // @ts-ignore
+    tx.getSigningBytes(
+      [...Buffer.from(payload, "hex")],
+      [...Buffer.from(networkGenerationHash!, "hex")]
     ),
-  ];
-  console.log("--------------------------------");
-  console.log(cosignSignedTxs);
-
-  const recreatedTx = TransactionMapping.createFromPayload(signedPayload);
-
-  cosignSignedTxs.forEach((cosignedTx) => {
-    signedPayload +=
-      cosignedTx.version.toHex() +
-      cosignedTx.signerPublicKey +
-      cosignedTx.signature;
-  });
-
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log(signedPayload);
-
-  const size = `00000000${(signedPayload.length / 2).toString(16)}`;
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log(size);
-  const formatedSize = size.substr(size.length - 8, size.length);
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log(formatedSize);
-  const littleEndianSize =
-    formatedSize.substr(6, 2) +
-    formatedSize.substr(4, 2) +
-    formatedSize.substr(2, 2) +
-    formatedSize.substr(0, 2);
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log(littleEndianSize);
-
-  signedPayload =
-    littleEndianSize + signedPayload.substr(8, signedPayload.length - 8);
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log(signedPayload);
-  const signedTxAll = new SignedTransaction(
-    signedPayload,
-    signedHash,
-    alice.publicKey,
-    recreatedTx.type,
-    recreatedTx.networkType
+    "E2666BDFB86429907BA105ADAF1D3C3BD65AF5057332775A1AF89B0FB5A0DD8EB146A59515186A6B067B21396C9FCDAB8F70D697549C346A8C6011A5E812C60B"
   );
 
-  const txRepo = repositoryFactory.createTransactionRepository();
-  await txRepo.announce(signedTxAll).toPromise();
+  // // マークルコンポーネントハッシュの計算
+  let merkleComponentHash = hash;
+  if (tx.cosignatures !== undefined && tx.cosignatures.length > 0) {
+    const hasher = sha3_256.create();
+    hasher.update(Buffer.from(hash, "hex"));
+    for (const cosignature of tx.cosignatures) {
+      hasher.update(Buffer.from(cosignature.signer.publicKey, "hex"));
+    }
+    merkleComponentHash = hasher.hex().toUpperCase();
+  }
+
+  const leaf = hash.toLowerCase();
+  // @ts-ignore
+  const HRoot = await blockRepo.getBlockByHeight(height).toPromise();
+  const sample = HRoot.blockTransactionsHash;
+
+  const merkleProof = await blockRepo
+    // @ts-ignore
+    .getMerkleTransaction(height, leaf)
+    .toPromise();
+  const sample2 = merkleProof.merklePath;
+
+  const result = validateTransactionInBlock(leaf, sample, sample2);
+
 };
-example().then();
+example()
+  .then()
+  .catch((err) => console.log(err));

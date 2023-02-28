@@ -81,6 +81,8 @@ const example = async (): Promise<void> => {
 
   //署名
   const signedAggregateTx = alice.sign(aggregateTx, networkGenerationHash!);
+  console.log("--------------------------------payload--------------------------------")
+  console.log(signedAggregateTx.payload)
 
   // ハッシュロックTXを作成
   const hashLockTx = HashLockTransaction.create(

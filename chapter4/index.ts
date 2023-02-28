@@ -38,6 +38,7 @@ const example = async (): Promise<void> => {
     networkGenerationHash!
   );
   console.log(signedTransaction.hash, "hash");
+  console.log("--------------------------------")
   console.log(signedTransaction.payload, "payload");
   const transactionRepository = repositoryFactory.createTransactionRepository();
   const response = await transactionRepository
