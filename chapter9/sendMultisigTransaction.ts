@@ -77,6 +77,8 @@ const example = async (): Promise<void> => {
   );
 
   console.log(signedTransaction.hash);
+  console.log("--------------------------------");
+  console.log(signedTransaction.payload);
 
   const hashLockTransaction = HashLockTransaction.create(
     Deadline.create(epochAdjustment!),

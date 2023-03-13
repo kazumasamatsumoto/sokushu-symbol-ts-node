@@ -81,8 +81,10 @@ const example = async (): Promise<void> => {
 
   //署名
   const signedAggregateTx = alice.sign(aggregateTx, networkGenerationHash!);
-  console.log("--------------------------------payload--------------------------------")
-  console.log(signedAggregateTx.payload)
+  console.log(
+    "--------------------------------payload--------------------------------"
+  );
+  console.log(signedAggregateTx.payload);
 
   // ハッシュロックTXを作成
   const hashLockTx = HashLockTransaction.create(
@@ -119,10 +121,15 @@ const example = async (): Promise<void> => {
       const cosignatureTx = CosignatureTransaction.create(
         txInfo as AggregateTransaction
       );
+      console.log(cosignatureTx);
       const singedCosTx = bob.signCosignatureTransaction(cosignatureTx);
+      console.log(singedCosTx);
+      console.log("--------------------------------");
       await txRepo.announceAggregateBondedCosignature(singedCosTx).toPromise();
       console.log("finish");
     }, 30000);
   }, 30000);
 };
-example().then();
+example()
+  .then()
+  .catch((err) => console.log(err));
