@@ -301,3 +301,5 @@ const example = async (): Promise<void> => {
 example()
   .then()
   .catch((err) => console.log(err));
+
+// test
