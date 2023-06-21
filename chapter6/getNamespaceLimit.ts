@@ -15,7 +15,7 @@ const example = async (): Promise<void> => {
   const chainRepo = repositoryFactory.createChainRepository();
   const blockRepo = repositoryFactory.createBlockRepository();
 
-  const namespaceId = new NamespaceId("kazumasa");
+  const namespaceId = new NamespaceId("matsumoto");
   const nsInfo = await nsRepo.getNamespace(namespaceId).toPromise();
   const lastHeight = (await chainRepo.getChainInfo().toPromise()).height;
   const lastBlock = await blockRepo.getBlockByHeight(lastHeight).toPromise();

@@ -22,8 +22,8 @@ const example = async (): Promise<void> => {
     .toPromise();
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const namespaceId = new NamespaceId("kazumasa");
-  const namespaceIdMosaic = new NamespaceId("kazumasa.tomato");
+  const namespaceId = new NamespaceId("matsumoto");
+  const namespaceIdMosaic = new NamespaceId("matsumoto.tomato");
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   // トランザクションの作成
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);

@@ -23,7 +23,7 @@ const example = async (): Promise<void> => {
     .toPromise();
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const namespaceId = new NamespaceId("kazumasa.tomato");
+  const namespaceId = new NamespaceId("matsumoto.tomato");
   const mosaicId = new MosaicId("7DF08F144FBC8CC0");
   // トランザクションの作成
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);

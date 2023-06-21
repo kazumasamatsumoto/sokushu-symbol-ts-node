@@ -17,18 +17,18 @@ const example = async (): Promise<void> => {
     .toPromise();
   const txRepo = repositoryFactory.createTransactionRepository();
 
-  const namespaceId = new NamespaceId("kazumasa");
-  const namespaceIdMosaic = new NamespaceId("kazumasa.tomato");
+  const namespaceId = new NamespaceId("matsumoto");
+  const namespaceIdMosaic = new NamespaceId("matsumoto.tomato");
   const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
   // トランザクションの作成
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
 
   const nsRepo = repositoryFactory.createNamespaceRepository();
   const namespaceInfo = await nsRepo
-    .getNamespace(new NamespaceId("kazumasa"))
+    .getNamespace(new NamespaceId("matsumoto"))
     .toPromise();
   const namespaceMosaicInfo = await nsRepo
-    .getNamespace(new NamespaceId("kazumasa.tomato"))
+    .getNamespace(new NamespaceId("matsumoto.tomato"))
     .toPromise();
   console.log(namespaceInfo);
   console.log(namespaceMosaicInfo);
