@@ -8,7 +8,7 @@ const bobPrivateKey =
   "EC8E918A532CB53E62C52B06F9B792CE5B073B90066FBB3A210B14B4DD568DCD";
 const example = async (): Promise<void> => {
   // Network information
-  const nodeUrl = "http://sym-test-04.opening-line.jp:3000";
+  const nodeUrl = "http://sym-test-01.opening-line.jp:3000";
   const repositoryFactory = new RepositoryFactoryHttp(nodeUrl);
   const epochAdjustment = await repositoryFactory
     .getEpochAdjustment()

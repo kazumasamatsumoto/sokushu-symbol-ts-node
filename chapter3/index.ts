@@ -6,7 +6,7 @@ const AliceAddress = "TABJ6AP5WNPZF2BEEN2WA6RFK7HR2VCQWXUU6UI";
 
 const example = async (): Promise<void> => {
   // Network information
-  const nodeUrl = "http://sym-test-04.opening-line.jp:3000";
+  const nodeUrl = "http://sym-test-01.opening-line.jp:3000";
   const repositoryFactory = new RepositoryFactoryHttp(nodeUrl);
   const epochAdjustment = await repositoryFactory
     .getEpochAdjustment()
