@@ -3,6 +3,7 @@ import {
   Account,
   Deadline,
   NamespaceRegistrationTransaction,
+  UInt64,
 } from "symbol-sdk";
 const AlicePrivateKey =
   "B82E003F3DAF29C1E55C39553327B8E178D820396C8A6144AA71329EF391D0EB";
@@ -21,32 +22,27 @@ const example = async (): Promise<void> => {
   const nwRepo = repositoryFactory.createNetworkRepository();
   const txRepo = repositoryFactory.createTransactionRepository();
   const rentalFees = await nwRepo.getRentalFees().toPromise();
-  const rootNsperBlock = rentalFees.effectiveRootNamespaceRentalFeePerBlock.compact();
+  const rootNsperBlock =
+    rentalFees.effectiveRootNamespaceRentalFeePerBlock.compact();
   const rentalDays = 365;
-  const rentalBlock = rentalDays * 24 * 60 * 60 / 30;
-  const rootNsRentalFeeTotal = rentalBlock * rootNsperBlock;
+  const rentalBlock = (rentalDays * 24 * 60 * 60) / 30;
+  const rootNsRenatalFeeTotal = rentalBlock * rootNsperBlock;
   console.log("rentalBlock:" + rentalBlock);
-  console.log("rootNsRentalFeeTotal", rootNsRentalFeeTotal);
-
-  const childNamespaceRentalFee = rentalFees.effectiveChildNamespaceRentalFee.compact();
-  console.log(childNamespaceRentalFee, "childNamespaceRentalFee")
+  console.log("rootNsRenatalFeeTotal:" + rootNsRenatalFeeTotal);
+  const namespaceName = "matsumoto"
 
   // トランザクションの作成
-  const tx = NamespaceRegistrationTransaction.createSubNamespace(
+  const tx = NamespaceRegistrationTransaction.createRootNamespace(
     Deadline.create(epochAdjustment!),
-    "tomato",
-    "kazumasa",
-    networkType!,
-  ).setMaxFee(100)
+    namespaceName,
+    UInt64.fromUint(172800),
+    networkType!
+  ).setMaxFee(2000);
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
   const signedTx = alice.sign(tx, networkGenerationHash!);
   console.log("Payload:", signedTx.payload);
   console.log("Transaction Hash:", signedTx.hash);
   const response = await txRepo.announce(signedTx).toPromise();
   console.log(response);
-  // const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-
 };
 example().then();
-
-// next 5 モザイク
