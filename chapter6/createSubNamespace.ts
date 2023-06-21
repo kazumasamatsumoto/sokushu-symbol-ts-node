@@ -35,7 +35,7 @@ const example = async (): Promise<void> => {
   const tx = NamespaceRegistrationTransaction.createSubNamespace(
     Deadline.create(epochAdjustment!),
     "tomato",
-    "kazumasa",
+    "matsumoto",
     networkType!,
   ).setMaxFee(1000)
   const alice = Account.createFromPrivateKey(AlicePrivateKey, networkType!);
@@ -44,7 +44,5 @@ const example = async (): Promise<void> => {
   console.log("Transaction Hash:", signedTx.hash);
   const response = await txRepo.announce(signedTx).toPromise();
   console.log(response);
-  // const bob = Account.createFromPrivateKey(bobPrivateKey, networkType!);
-
 };
 example().then();
