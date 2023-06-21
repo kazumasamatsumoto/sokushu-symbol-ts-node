@@ -43,5 +43,3 @@ const example = async (): Promise<void> => {
   console.log(response);
 };
 example().then();
-
-// next 5 モザイク
